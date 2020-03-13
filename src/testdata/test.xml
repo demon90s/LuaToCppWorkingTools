@@ -1,0 +1,30 @@
+<root>
+	<value>42</value>
+	<Person>
+		<name>diwen</name>
+		<age>29</age>
+		<work>
+			<company>youyan</company>
+			<addr>guangzhou</addr>
+		</work>
+	</Person>
+
+	<id>
+		<data>
+			<seq>1</seq>
+			<date>1990</date>
+		</data>
+		<data>
+			<seq>2</seq>
+			<date>2000</date>
+		</data>
+		<data>
+			<seq>3</seq>
+			<date>1998</date>
+		</data>
+		<data>
+			<seq>4</seq>
+			<date>2020</date>
+		</data>
+	</id>
+</root>
