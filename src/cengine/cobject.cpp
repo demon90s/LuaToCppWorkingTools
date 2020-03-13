@@ -1,5 +1,6 @@
 #include "cengine.hpp"
 #include <cstring>
+#include <new>
 
 #define OBJECT_METATABLE "OBJECT_METATABLE"
 

@@ -8,13 +8,14 @@ set(CENGINE_LIB cengine)
 set(LIBS ${CENGINE_LIB})
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Linux
+    link_directories(${PROJECT_SOURCE_DIR}/lib/linux)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Windows
     add_definitions(/w"4996" /MTd)
+    link_directories(${PROJECT_SOURCE_DIR}/lib)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE CENGINE_LIB_FILES ${PROJECT_SOURCE_DIR}/src/cengine/*)
 add_library(${CENGINE_LIB} SHARED ${CENGINE_LIB_FILES})

@@ -1,4 +1,6 @@
 #include "cengine.hpp"
+#include <cstring>
+#include <memory>
 
 #include "3rd/colorprintf.hpp"
 extern "C"
@@ -23,11 +25,9 @@ extern "C"
 {
     namespace detail
     {
-        static const char *array_node = "data";
-
-        void xml_make_array(lua_State* L)
+        void xml_make_array(lua_State* L, const char *array_name)
         {
-            lua_pushstring(L, array_node);
+            lua_pushstring(L, array_name);
             lua_newtable(L);
             lua_settable(L, -3);
         }
@@ -53,6 +53,27 @@ extern "C"
             }
         }
 
+        bool xml_is_array_node(rapidxml::xml_node<>* node, std::string &array_name)
+        {
+            // <tab>
+            //     <data>...</data>
+            //     <data>...</data>
+            // </tab>
+            auto child = node->first_node();
+            if (nullptr == child)
+            {
+                return false;
+            }
+
+            auto sibling = child->next_sibling(child->name());
+            if (sibling != nullptr)
+            {
+                array_name = child->name();
+                return true;
+            }
+            return false;
+        }
+
         void xml_deal_with_node(lua_State *L, rapidxml::xml_node<>* node)
         {
             if (nullptr == node || node->type() != rapidxml::node_element)
@@ -61,7 +82,10 @@ extern "C"
                 lua_settable(L, -3);
                 return;
             }
-            
+
+            std::string array_name;
+            bool is_array = xml_is_array_node(node, array_name);
+
             for (auto child_node = node->first_node(); child_node; child_node = child_node->next_sibling())
             {
                 if (child_node->type() != rapidxml::node_element)
@@ -71,22 +95,29 @@ extern "C"
 
                 if (auto value_node = child_node->first_node())
                 {
-                    if (strcmp(child_node->name(), array_node) == 0)
+                    if (is_array &&
+                        // 这句话可以优化掉的，因为很少有数组节点里面还包含其他别的节点 
+                        strcmp(child_node->name(), array_name.c_str()) == 0)
                     {
                         // deal with array
-                        lua_pushstring(L, array_node);
+                        lua_pushstring(L, array_name.c_str());
                         lua_gettable(L, -2);
                         luaL_checktype(L, -1, LUA_TTABLE);
                         lua_Integer n = luaL_len(L, -1);
                         if (value_node->type() == rapidxml::node_data)
                         {
+                            // 最后的叶子了
                             xml_push_value(L, value_node->value());
                         }
                         else
                         {
                             lua_newtable(L);
                             // make an array
-                            xml_make_array(L);
+                            std::string array_name;
+                            if (xml_is_array_node(child_node, array_name))
+                            {
+                                xml_make_array(L, array_name.c_str());
+                            }
 
                             xml_deal_with_node(L, child_node);
                         }
@@ -95,6 +126,8 @@ extern "C"
                         continue;
                     }
 
+                    // <tab>value</tab>
+                    // 最后的叶子了
                     if (value_node->type() == rapidxml::node_data)
                     {
                         lua_pushstring(L, child_node->name());
@@ -108,7 +141,11 @@ extern "C"
                 lua_newtable(L);
                 
                 // make an array
-                xml_make_array(L);
+                std::string array_name;
+                if (xml_is_array_node(child_node, array_name))
+                {
+                    xml_make_array(L, array_name.c_str());
+                }
 
                 xml_deal_with_node(L, child_node);
                 lua_settable(L, -3);
@@ -152,8 +189,13 @@ extern "C"
         }
 
         lua_newtable(L);
-        // make an array
-        detail::xml_make_array(L);
+        
+        std::string array_name;
+        if (detail::xml_is_array_node(root, array_name))
+        {
+            // make an array
+            detail::xml_make_array(L, array_name.c_str());
+        }
 
         detail::xml_deal_with_node(L, root);
 

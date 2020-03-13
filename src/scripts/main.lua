@@ -36,13 +36,18 @@ function main()
     ColorPrint.Log("This is a Log")
     ColorPrint.Special("This is Special")
 
-    local t, error = XmlParser.Parse("test.xml")
-    if nil == t then
-    	ColorPrint.Error("xml parse error: " .. error)
-    end
+    local t, error = XmlParser.Parse("??")
+    assert(t == nil)
+
+    t = XmlParser.Parse("test.xml")
+    assert(t)
     
-    PrintTable(t)
-    io.write("\n")
+    --PrintTable(t)
+    --io.write("\n")
+    assert(t.value == 42)
+    assert(t.Person.name == "diwen")
+    assert(t.number.power[1] == 100)
+    assert(t.id.data[2].date == 2000)
 
     local obj = Object.New()
     assert(obj:GetValue() == 0)
